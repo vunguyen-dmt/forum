@@ -1,5 +1,5 @@
 """Migration commands helper methods."""
-
+import re
 from typing import Any
 
 from django.contrib.auth.models import User  # pylint: disable=E5142
@@ -24,6 +24,19 @@ from forum.models import (
 )
 from forum.utils import make_aware, get_trunc_title
 
+def replace_emojis(text, replacement="[EMOJI]"):
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"
+        "\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF"
+        "\U0001F1E0-\U0001F1FF"
+        "\U00002700-\U000027BF"
+        "\U0001F900-\U0001F9FF"
+        "]+",
+        flags=re.UNICODE
+    )
+    return emoji_pattern.sub(replacement, text)
 
 def get_all_course_ids(db: Database[dict[str, Any]]) -> list[str]:
     """Get all course IDs from MongoDB."""
@@ -82,22 +95,41 @@ def create_or_update_thread(thread_data: dict[str, Any]) -> None:
         mongo_id=mongo_thread_id,
     )
     if not mongo_content.content_object_id:
-        thread = CommentThread.objects.create(
-            author=author,
-            course_id=thread_data["course_id"],
-            title=get_trunc_title(thread_data.get("title", "")),
-            body=thread_data["body"],
-            thread_type=thread_data.get("thread_type", "discussion"),
-            context=thread_data.get("context", "course"),
-            anonymous=thread_data.get("anonymous", False),
-            anonymous_to_peers=thread_data.get("anonymous_to_peers", False),
-            closed=thread_data.get("closed", False),
-            pinned=thread_data.get("pinned"),
-            created_at=make_aware(thread_data["created_at"]),
-            updated_at=make_aware(thread_data["updated_at"]),
-            last_activity_at=make_aware(thread_data["last_activity_at"]),
-            commentable_id=thread_data.get("commentable_id"),
-        )
+        try:
+            thread = CommentThread.objects.create(
+                author=author,
+                course_id=thread_data["course_id"],
+                title=get_trunc_title(thread_data.get("title", "")),
+                body=thread_data["body"],
+                thread_type=thread_data.get("thread_type", "discussion"),
+                context=thread_data.get("context", "course"),
+                anonymous=thread_data.get("anonymous", False),
+                anonymous_to_peers=thread_data.get("anonymous_to_peers", False),
+                closed=thread_data.get("closed", False),
+                pinned=thread_data.get("pinned"),
+                created_at=make_aware(thread_data["created_at"]),
+                updated_at=make_aware(thread_data["updated_at"]),
+                last_activity_at=make_aware(thread_data["last_activity_at"]),
+                commentable_id=thread_data.get("commentable_id"),
+            )
+        except:
+            thread = CommentThread.objects.create(
+                author=author,
+                course_id=thread_data["course_id"],
+                title=get_trunc_title(thread_data.get("title", "")),
+                body=replace_emojis(thread_data["body"]),
+                thread_type=thread_data.get("thread_type", "discussion"),
+                context=thread_data.get("context", "course"),
+                anonymous=thread_data.get("anonymous", False),
+                anonymous_to_peers=thread_data.get("anonymous_to_peers", False),
+                closed=thread_data.get("closed", False),
+                pinned=thread_data.get("pinned"),
+                created_at=make_aware(thread_data["created_at"]),
+                updated_at=make_aware(thread_data["updated_at"]),
+                last_activity_at=make_aware(thread_data["last_activity_at"]),
+                commentable_id=thread_data.get("commentable_id"),
+            )
+            
         mongo_content.content_object_id = thread.pk
         mongo_content.content_type = thread.content_type
         mongo_content.save()

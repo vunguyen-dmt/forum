@@ -175,16 +175,28 @@ def create_or_update_edit_history(content: dict[str, Any]) -> None:
     mongo_content = MongoContent.objects.get(mongo_id=str(content["_id"]))
     content_object = content_type.objects.get(pk=mongo_content.content_object_id)
     for edit in edit_history:
-        EditHistory.objects.get_or_create(
-            content_object_id=content_object.pk,
-            content_type=content_object.content_type,
-            created_at=edit["created_at"],
-            editor=User.objects.get(pk=int(edit["author_id"])),
-            defaults={
-                "original_body": edit["original_body"],
-                "reason_code": edit["reason_code"],
-            },
-        )
+        try:
+            EditHistory.objects.get_or_create(
+                content_object_id=content_object.pk,
+                content_type=content_object.content_type,
+                created_at=edit["created_at"],
+                editor=User.objects.get(pk=int(edit["author_id"])),
+                defaults={
+                    "original_body": edit["original_body"],
+                    "reason_code": edit["reason_code"],
+                },
+            )
+        except:
+            EditHistory.objects.get_or_create(
+                content_object_id=content_object.pk,
+                content_type=content_object.content_type,
+                created_at=edit["created_at"],
+                editor=User.objects.get(pk=int(edit["author_id"])),
+                defaults={
+                    "original_body": "",
+                    "reason_code": edit["reason_code"],
+                },
+            )
 
 
 def create_or_update_abuse_flaggers(content: dict[str, Any]) -> None:

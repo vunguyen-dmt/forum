@@ -168,20 +168,36 @@ def create_or_update_comment(comment_data: dict[str, Any]) -> None:
         mongo_id=str(comment_data["_id"])
     )
     if not mongo_comment.content_object_id:
-        comment = Comment.objects.create(
-            author=author,
-            comment_thread=thread,
-            parent=parent,
-            course_id=comment_data["course_id"],
-            body=comment_data["body"],
-            anonymous=comment_data.get("anonymous", False),
-            anonymous_to_peers=comment_data.get("anonymous_to_peers", False),
-            endorsed=comment_data.get("endorsed", False),
-            child_count=comment_data.get("child_count", 0),
-            created_at=make_aware(comment_data["created_at"]),
-            updated_at=make_aware(comment_data["updated_at"]),
-            depth=1 if parent else 0,
-        )
+        try:
+            comment = Comment.objects.create(
+                author=author,
+                comment_thread=thread,
+                parent=parent,
+                course_id=comment_data["course_id"],
+                body=comment_data["body"],
+                anonymous=comment_data.get("anonymous", False),
+                anonymous_to_peers=comment_data.get("anonymous_to_peers", False),
+                endorsed=comment_data.get("endorsed", False),
+                child_count=comment_data.get("child_count", 0),
+                created_at=make_aware(comment_data["created_at"]),
+                updated_at=make_aware(comment_data["updated_at"]),
+                depth=1 if parent else 0,
+            )
+        except:
+            comment = Comment.objects.create(
+                author=author,
+                comment_thread=thread,
+                parent=parent,
+                course_id=comment_data["course_id"],
+                body=replace_emojis(comment_data["body"]),
+                anonymous=comment_data.get("anonymous", False),
+                anonymous_to_peers=comment_data.get("anonymous_to_peers", False),
+                endorsed=comment_data.get("endorsed", False),
+                child_count=comment_data.get("child_count", 0),
+                created_at=make_aware(comment_data["created_at"]),
+                updated_at=make_aware(comment_data["updated_at"]),
+                depth=1 if parent else 0,
+            )
         mongo_comment.content_object_id = comment.pk
         mongo_comment.content_type = comment.content_type
         mongo_comment.save()

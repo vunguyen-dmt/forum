@@ -25,8 +25,7 @@ from forum.models import (
 from forum.utils import make_aware, get_trunc_title
 
 def replace_emojis(text, replacement="[EMOJI]"):
-    text = text.decode('utf-8', errors='ignore')
-    return re.sub(r'[^\w\s\u00C0-\u017F]', replacement, text)
+    return re.sub(r'[^\w\s\u00C0-\u017F]|[\U00010000-\U0010FFFF]', '', text)
 
 def get_all_course_ids(db: Database[dict[str, Any]]) -> list[str]:
     """Get all course IDs from MongoDB."""
